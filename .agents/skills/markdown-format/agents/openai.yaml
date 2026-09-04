@@ -1,0 +1,4 @@
+interface:
+  display_name: "Markdown Format"
+  short_description: "Format repository Markdown with rumdl"
+  default_prompt: "Use $markdown-format to format and verify the Markdown files changed by this task."

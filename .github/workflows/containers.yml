@@ -1,0 +1,114 @@
+name: Containers
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/containers.yml"
+      - "src/archlinux/**"
+      - "justfile"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/containers.yml"
+      - "src/archlinux/**"
+      - "justfile"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.variant }}
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: nu {0}
+    env:
+      RUN_ID: ${{ github.run_id }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - base
+          - dev
+
+    steps:
+      - name: Install Nushell
+        uses: hustcer/setup-nu@9215c80adb545a85c419d5085b76eb6d082f49e7 # v3.27
+        with:
+          version: "0.115.1"
+
+      - name: Install Just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+        with:
+          just-version: "1.58.0"
+
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Validate source
+        run: just validate
+
+      - name: Build image
+        env:
+          REVISION: ${{ github.sha }}
+        run: just build "${{ matrix.variant }}"
+
+      - name: Smoke-test image
+        env:
+          REVISION: ${{ github.sha }}
+        run: just smoke "${{ matrix.variant }}"
+
+      - name: Tag image
+        env:
+          REVISION: ${{ github.sha }}
+        run: just tag "${{ matrix.variant }}"
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: $env.GHCR_TOKEN | podman login ghcr.io --username $env.GHCR_USERNAME --password-stdin
+
+      - name: Publish image
+        if: github.event_name == 'push'
+        env:
+          REVISION: ${{ github.sha }}
+        run: just publish "${{ matrix.variant }}"
+
+  actions-job-smoke:
+    name: GitHub Actions job container
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: nu {0}
+    container:
+      image: ghcr.io/dbent/archlinux:dev-sha-${{ github.sha }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Verify job container
+        run: |
+          let uid = (^id -u | complete)
+          if $uid.exit_code != 0 {
+            exit $uid.exit_code
+          }
+          if ($uid.stdout | str trim) != '0' {
+            error make {msg: 'job container does not run as root'}
+          }
+          ^node --version
+          ^git --version
+          ^just --version
+          ^nu --version
