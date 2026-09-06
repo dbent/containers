@@ -4,37 +4,35 @@ on:
   pull_request:
     paths:
       - ".github/workflows/containers.yml"
+      - "bin/**"
       - "src/archlinux/**"
       - "justfile"
   push:
     branches:
       - main
+    tags:
+      - "archlinux/base-*"
+      - "archlinux/dev-*"
     paths:
       - ".github/workflows/containers.yml"
+      - "bin/**"
       - "src/archlinux/**"
       - "justfile"
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
-  build:
-    name: Build ${{ matrix.variant }}
+  validate:
+    name: Validate
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     defaults:
       run:
         shell: nu {0}
     env:
-      RUN_ID: ${{ github.run_id }}
+      REVISION: ${{ github.sha }}
     permissions:
       contents: read
-      packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        variant:
-          - base
-          - dev
 
     steps:
       - name: Install Nushell
@@ -50,50 +48,95 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - name: Validate source
+      - name: Validate
         run: just validate
 
-      - name: Build image
-        env:
-          REVISION: ${{ github.sha }}
-        run: just build "${{ matrix.variant }}"
+  publish:
+    name: Publish
+    if: startsWith(github.ref, 'refs/tags/archlinux/')
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: nu {0}
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    outputs:
+      date: ${{ steps.release.outputs.date }}
+      revision: ${{ steps.release.outputs.revision }}
+      variant: ${{ steps.release.outputs.variant }}
+      version: ${{ steps.release.outputs.version }}
+    permissions:
+      contents: read
+      packages: write
 
-      - name: Smoke-test image
-        env:
-          REVISION: ${{ github.sha }}
-        run: just smoke "${{ matrix.variant }}"
+    steps:
+      - name: Install Nushell
+        uses: hustcer/setup-nu@9215c80adb545a85c419d5085b76eb6d082f49e7 # v3.27
+        with:
+          version: "0.115.1"
 
-      - name: Tag image
+      - name: Install Just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+        with:
+          just-version: "1.58.0"
+
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate release
+        id: release
         env:
-          REVISION: ${{ github.sha }}
-        run: just tag "${{ matrix.variant }}"
+          TAG_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          let release = (nu --no-config-file bin/containers.nu validate-release $env.RELEASE_TAG | from json)
+          let tag_object = (git rev-parse $"refs/tags/($env.RELEASE_TAG)" | str trim)
+          let revision = (git rev-list -n 1 $"refs/tags/($env.RELEASE_TAG)" | str trim)
+          let metadata = (
+            curl --fail --silent --show-error
+              --header 'Accept: application/vnd.github+json'
+              --header $"Authorization: Bearer ($env.TAG_API_TOKEN)"
+              --header 'X-GitHub-Api-Version: 2026-03-10'
+              $"($env.GITHUB_API_URL)/repos/($env.GITHUB_REPOSITORY)/git/tags/($tag_object)"
+            | from json
+          )
+          if not $metadata.verification.verified {
+            error make {msg: $"GitHub did not verify the release-tag signature: ($metadata.verification.reason)"}
+          }
+          $"date=($release.date)" | save --append $env.GITHUB_OUTPUT
+          $"revision=($revision)" | save --append $env.GITHUB_OUTPUT
+          $"variant=($release.variant)" | save --append $env.GITHUB_OUTPUT
+          $"version=($release.version)" | save --append $env.GITHUB_OUTPUT
 
       - name: Log in to GHCR
-        if: github.event_name == 'push'
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USERNAME: ${{ github.actor }}
         run: $env.GHCR_TOKEN | podman login ghcr.io --username $env.GHCR_USERNAME --password-stdin
 
-      - name: Publish image
-        if: github.event_name == 'push'
+      - name: Validate and publish
         env:
-          REVISION: ${{ github.sha }}
-        run: just publish "${{ matrix.variant }}"
+          RELEASE_VARIANT: ${{ steps.release.outputs.variant }}
+          REVISION: ${{ steps.release.outputs.revision }}
+        run: just publish $env.RELEASE_VARIANT
 
   actions-job-smoke:
     name: GitHub Actions job container
-    if: github.event_name == 'push'
-    needs: build
+    if: startsWith(github.ref, 'refs/tags/archlinux/') && needs.publish.outputs.variant == 'dev'
+    needs: publish
     runs-on: ubuntu-24.04
     defaults:
       run:
         shell: nu {0}
     container:
-      image: ghcr.io/dbent/archlinux:dev-sha-${{ github.sha }}
+      image: ghcr.io/dbent/archlinux:dev-${{ needs.publish.outputs.version }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Check out repository
@@ -113,3 +156,36 @@ jobs:
           ^git --version
           ^just --version
           ^nu --version
+
+  anonymous-pull-smoke:
+    name: Anonymous pulls
+    if: startsWith(github.ref, 'refs/tags/archlinux/')
+    needs: publish
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: nu {0}
+    env:
+      RELEASE_DATE: ${{ needs.publish.outputs.date }}
+      RELEASE_VARIANT: ${{ needs.publish.outputs.variant }}
+      RELEASE_VERSION: ${{ needs.publish.outputs.version }}
+    permissions: {}
+
+    steps:
+      - name: Install Nushell
+        uses: hustcer/setup-nu@9215c80adb545a85c419d5085b76eb6d082f49e7 # v3.27
+        with:
+          version: "0.115.1"
+
+      - name: Pull published variants without credentials
+        run: |
+          let authfile = $"($env.RUNNER_TEMP)/anonymous-auth.json"
+          '{"auths":{}}' | save --force $authfile
+          let tags = [
+            $"($env.RELEASE_VARIANT)-($env.RELEASE_VERSION)"
+            $"($env.RELEASE_VARIANT)-($env.RELEASE_DATE)"
+            $env.RELEASE_VARIANT
+          ]
+          for tag in $tags {
+            podman pull --authfile $authfile $"ghcr.io/dbent/archlinux:($tag)"
+          }

@@ -10,10 +10,14 @@ and CI automation.
 - Container families live under `/src/<family>/`.
 - Pin upstream images by both immutable tag and digest.
 - `/src/archlinux/VERSION` is the Arch Archive snapshot source of
-  truth. Its `YYYYMMDD` value must match the Archive URL. Published
-  family versions use `YYYYMMDD.RUN_ID`, with the repository-unique
-  GitHub Actions run ID supplied through `RUN_ID`; local builds default
-  to run ID `0`. Change `VERSION` only when changing the snapshot.
+  truth. Its `YYYYMMDD` value must match the Archive URL. Change
+  `VERSION` only when changing the snapshot; it does not determine the
+  release version.
+- Releases use signed annotated Git tags named
+  `archlinux/<variant>-YYYY.MM.DD-N`. Each variant has an independent
+  daily sequence in which `N` starts at `1`, increases monotonically,
+  and has no gaps. Removing the `archlinux/` namespace produces the
+  exact immutable OCI tag.
 - Keep the Arch stages ordered `base`, then `dev`, with `dev` extending
   `base` directly. `base` is minimal. `dev` includes build tools and a
   Node.js runtime but omits `npm`; leave interactive tooling to the
@@ -31,21 +35,24 @@ and CI automation.
   reimplementing their behavior.
 - Use rootless Podman. Do not substitute Docker unless the task
   explicitly changes the supported tooling.
-- Pull requests build and test but never publish. Relevant pushes to
-  `main` publish the moving GHCR aliases.
+- Pull requests and relevant pushes to `main` build and test but never
+  publish. Only an explicit valid release-tag push publishes the
+  immutable, date, and moving GHCR aliases.
 - Authenticate to GHCR with the repository `GITHUB_TOKEN`. Keep GitHub
   Actions permissions minimal and pin reusable actions to full commit
   SHAs.
+- Create release tags with
+  `just release archlinux/<variant>-YYYY.MM.DD-N`, review the signed
+  local tag, then push that tag explicitly.
 
 ## Validation
 
-- Source metadata: `just validate`.
-- Image or build-input changes: `just build`, `just smoke`, then
-  `just tag`.
+- Canonical acceptance gate: `just validate`.
+- Focused image iteration: `just build`, then `just smoke`.
 - Markdown changes: use the repository `markdown-format` skill.
 - All changes: review the intended diff and run `git diff --check`.
 - After publication, verify the GitHub Actions job-container smoke test
-  and anonymous pulls of every published variant.
+  and anonymous pulls of every published alias.
 
 ## Hard Constraints
 

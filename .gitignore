@@ -1,2 +1,8 @@
-# Generated artifacts
+# Generated and build output
 /dst/
+
+# Repository-local operational state
+/.tmp/
+
+# Disposable exploration
+/scratch/

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Git Commit"
-  short_description: "Create approval-gated conventional commits"
-  default_prompt: "Use $git-commit to propose, obtain approval for, and create or amend a commit that follows the repository conventions."
