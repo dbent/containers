@@ -365,7 +365,7 @@ smoke variant="all":
 
         if $target == 'dev' {
           let commands = [
-            curl gcc git jq just make node nu reuse rumdl ssh tar unzip zip zstd
+            actionlint curl gcc git jq just make node nu reuse rumdl ssh tar unzip zip zstd
           ]
           let command_script = 'def main [...commands: string] { for command in $commands { if (which $command | is-empty) { print --stderr $"error: missing command ($command)"; exit 1 } } }'
           let command_check = (

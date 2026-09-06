@@ -108,6 +108,7 @@ jobs:
           if ($uid.stdout | str trim) != '0' {
             error make {msg: 'job container does not run as root'}
           }
+          ^actionlint -version
           ^node --version
           ^git --version
           ^just --version

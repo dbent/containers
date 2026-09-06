@@ -28,6 +28,7 @@ LABEL org.opencontainers.image.description="Arch Linux build environment for dev
 LABEL dev.dbent.containers.variant="dev"
 
 RUN pacman -S --needed --noconfirm \
+        actionlint \
         base-devel \
         ca-certificates \
         curl \
