@@ -21,7 +21,7 @@ def main [] {
 
 def "main dev" [] {
     let required_commands = [
-        actionlint curl gcc gh git jq just make node nu reuse rumdl
+        actionlint b3sum curl gcc gh git jq just make node nu reuse rumdl
         ssh tar tea unzip zip zstd
     ]
     for command in $required_commands {
@@ -41,6 +41,7 @@ def "main job" [] {
     }
 
     ^actionlint -version
+    ^b3sum --version
     ^gh --version
     ^node --version
     ^git --version

@@ -29,6 +29,7 @@ LABEL dev.dbent.containers.variant="dev"
 
 RUN pacman -S --needed --noconfirm \
         actionlint \
+        b3sum \
         base-devel \
         ca-certificates \
         curl \

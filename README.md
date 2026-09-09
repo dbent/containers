@@ -9,10 +9,10 @@ The `archlinux` image family is published for `linux/amd64` in two
 variants:
 
 - `base` is a minimal, snapshot-pinned Arch Linux environment.
-- `dev` adds general build tools, GitHub and Gitea CLIs, and a Node.js
-  runtime for development and GitHub or Gitea Actions jobs. Interactive
-  tooling remains the host's responsibility, and the image does not
-  include `npm`.
+- `dev` adds general build tools, the `b3sum` checksum utility, GitHub
+  and Gitea CLIs, and a Node.js runtime for development and GitHub or
+  Gitea Actions jobs. Interactive tooling remains the host's
+  responsibility, and the image does not include `npm`.
 
 Both variants are pinned to a dated Arch Linux Archive snapshot and an
 immutable upstream image tag and digest.
