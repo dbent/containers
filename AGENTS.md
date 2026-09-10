@@ -7,12 +7,9 @@ rootless Podman and published to GHCR by GitHub Actions.
 
 - `/README.md` is the user-facing reference.
 - `/CONTRIBUTING.md` defines contributor and validation workflows.
-- `/doc/GOAL.md` records durable priorities and requires explicit user
-  permission to modify. Treat it as high-level priorities, not an
-  implementation specification.
-- `/doc/DESIGN.md` records architecture and enduring boundaries. Review
-  architectural changes deliberately and keep it consistent with the
-  implemented design.
+- `/doc/GOAL.md` records durable priorities. Treat it as high-level
+  priorities, not an implementation specification.
+- `/doc/DESIGN.md` records architecture and enduring boundaries.
 - `/doc/NOTES.md` records curated durable knowledge and non-obvious
   operational discoveries, not an activity log.
 - `/doc/FYI.md` records deferred incidental findings. Do not
@@ -39,5 +36,7 @@ rootless Podman and published to GHCR by GitHub Actions.
 ## Hard Constraints
 
 - Do not modify `/AGENTS.md` without explicit user permission.
+- Conspicuously report any changes to `/doc/DESIGN.md` and
+  `/doc/GOAL.md` to the user at the end of the task.
 - The 0BSD license covers repository-authored source only. Do not imply
   that software installed in an image uses that license.
