@@ -16,7 +16,8 @@ rootless Podman and published to GHCR by GitHub Actions.
   investigate them merely to expand an item.
 - `/doc/SKILLS.md`, when present, records project-specific skill
   overrides. When using a skill, read its matching section.
-- `/doc/PROJECT.md` records setup decisions and baseline exceptions.
+- `/doc/PROJECT.md` records dependency-update rules, setup decisions,
+  and baseline exceptions.
 - `/doc/RELEASING.md` defines release and recovery procedures.
 - `/justfile` is the authority for local and CI automation.
 

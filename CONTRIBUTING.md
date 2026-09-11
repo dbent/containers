@@ -175,10 +175,12 @@ It includes each package's supporting scripts and references. Refresh
 installed copies with `just update codex` from that same checkout.
 
 This project's workflows use `git-commit`, `markdown-format`, and
-`copyedit`. Setup audits use `project-audit` and its companion
-`project-init`; deferred-findings and actionable-comment reviews use
-`fyi-audit` and `todo-audit` when requested. Installing the collection
-also supplies optional workflows that this repository does not require.
+`copyedit`; pinned external-dependency audits use
+`dependencies-update`. Setup audits use `project-audit` and its
+companion `project-init`; deferred-findings and actionable-comment
+reviews use `fyi-audit` and `todo-audit` when requested. Installing the
+collection also supplies optional workflows that this repository does
+not require.
 
 Before agent-assisted work, confirm the relevant skills appear in
 Codex's available skill list. Keep one discoverable copy of each shared

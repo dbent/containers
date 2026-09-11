@@ -23,5 +23,3 @@ Users can select a documented image variant, reproduce its inputs, and
 verify its expected platform, metadata, packages, and runtime behavior.
 Contributors can validate a change without learning workflow-specific
 implementation details.
-
-Changing this document requires explicit user permission.
