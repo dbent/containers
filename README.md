@@ -9,7 +9,8 @@ The `archlinux` image family is published for `linux/amd64` in two
 variants:
 
 - `base` is a minimal, snapshot-pinned Arch Linux environment.
-- `dev` adds general build tools, the `b3sum` checksum utility, GitHub
+- `dev` adds general build and archive tools, including 7-Zip,
+  `nvchecker` for release checks, the `b3sum` checksum utility, GitHub
   and Gitea CLIs, and a Node.js runtime for development and GitHub or
   Gitea Actions jobs. Interactive tooling remains the host's
   responsibility, and the image does not include `npm`.

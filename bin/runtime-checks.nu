@@ -21,8 +21,8 @@ def main [] {
 
 def "main dev" [] {
     let required_commands = [
-        actionlint b3sum curl gcc gh git jq just make node nu reuse rumdl
-        ssh tar tea unzip zip zstd
+        7z actionlint b3sum bsdcpio bsdtar curl gcc gh git jq just make
+        node nu nvchecker reuse rumdl ssh tar tea unzip zip zstd
     ]
     for command in $required_commands {
         require-command $command
@@ -40,12 +40,24 @@ def "main job" [] {
         error make {msg: 'job container does not run as root'}
     }
 
+    let seven_zip = (^7z | complete)
+    if $seven_zip.exit_code != 0 {
+        error make {msg: 'cannot query 7-Zip version'}
+    }
+    $seven_zip.stdout
+    | lines
+    | where {|line| not ($line | str trim | is-empty) }
+    | first
+    | print
+
     ^actionlint -version
     ^b3sum --version
+    ^bsdtar --version
     ^gh --version
     ^node --version
     ^git --version
     ^just --version
     ^nu --version
+    ^nvchecker --version
     ^tea --version
 }

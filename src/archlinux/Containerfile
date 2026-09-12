@@ -28,6 +28,7 @@ LABEL org.opencontainers.image.description="Arch Linux build environment for dev
 LABEL dev.dbent.containers.variant="dev"
 
 RUN pacman -S --needed --noconfirm \
+        7zip \
         actionlint \
         b3sum \
         base-devel \
@@ -39,6 +40,7 @@ RUN pacman -S --needed --noconfirm \
         just \
         nodejs \
         nushell \
+        nvchecker \
         openssh \
         reuse \
         rumdl \
